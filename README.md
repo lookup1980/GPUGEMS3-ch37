@@ -5,3 +5,5 @@ https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-37-e
 
 Install GSL:
 sudo apt-get install libgsl-dev
+
+Set env: export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-10.0/lib64
