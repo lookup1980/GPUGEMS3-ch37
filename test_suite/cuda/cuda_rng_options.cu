@@ -21,14 +21,37 @@
 #include <math.h>
 
 // includes, project
-#include <cutil.h>
+// #include <cutil.h>
+
+#include <cuda_runtime.h>  // CUDA's, not caffe's, for fabs, signbit
+#include <cuda_runtime_api.h>  // CUDA's, not caffe's, for fabs, signbit
+
+#include <helper_cuda.h>
+// #include <helper_cuda_gl.h>
+// #include <helper_functions.h>
+#include <helper_timer.h>
+// #include "helper_timer.h"
 
 #include "rand_helpers.h"
 
 #include "constants.h"
 
-unsigned int timer_pre_computation_init_wallace = 0;
-unsigned int timer_pre_computation_init_tw = 0;
+
+#define CUT_CHECK_ERROR(msg)
+#define CUT_CHECK_DEVICE()
+#  define CUT_SAFE_CALL( call)                                               \
+    if( true != call) {                                                   \
+        fprintf(stderr, "Cut error in file '%s' in line %i.\n",              \
+                __FILE__, __LINE__);                                         \
+        exit(EXIT_FAILURE);                                                  \
+    } 
+
+// unsigned int timer_pre_computation_init_wallace = 0;
+// unsigned int timer_pre_computation_init_tw = 0;
+
+StopWatchInterface *timer_pre_computation_init_wallace = NULL;
+StopWatchInterface *timer_pre_computation_init_tw = NULL;
+
 unsigned int *tauswortheSeeds = 0;
 unsigned int *deviceTauswortheSeeds = 0;
 float *hostPool = 0;
@@ -60,19 +83,19 @@ extern "C" void cuda_wallace_two_block(unsigned int seed, float *chi2Corrections
 
 	// just to keep call happy
 	float *devicePrices, *deviceStrike, *deviceYears;
-	CUDA_SAFE_CALL(cudaMalloc((void **) &devicePrices, 4));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &deviceStrike, 4));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &deviceYears, 4));
+	checkCudaErrors(cudaMalloc((void **) &devicePrices, 4));
+	checkCudaErrors(cudaMalloc((void **) &deviceStrike, 4));
+	checkCudaErrors(cudaMalloc((void **) &deviceYears, 4));
 
 
-	CUDA_SAFE_CALL(cudaMalloc((void **) &deviceChi2Corrections, 4 * WALLACE_NUM_BLOCKS * WALLACE_NUM_OUTPUTS_PER_RUN));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &devPool, 4 * WALLACE_TOTAL_POOL_SIZE));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &deviceGeneratedRandomNumberPool, 4 * WALLACE_OUTPUT_SIZE));
+	checkCudaErrors(cudaMalloc((void **) &deviceChi2Corrections, 4 * WALLACE_NUM_BLOCKS * WALLACE_NUM_OUTPUTS_PER_RUN));
+	checkCudaErrors(cudaMalloc((void **) &devPool, 4 * WALLACE_TOTAL_POOL_SIZE));
+	checkCudaErrors(cudaMalloc((void **) &deviceGeneratedRandomNumberPool, 4 * WALLACE_OUTPUT_SIZE));
 
 	// Perform copies to GPU
 	// copy the start pool in
-	CUDA_SAFE_CALL(cudaMemcpy(devPool, hostPool, 4 * WALLACE_TOTAL_POOL_SIZE, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(deviceChi2Corrections, chi2Corrections, 4 * WALLACE_NUM_BLOCKS * WALLACE_NUM_OUTPUTS_PER_RUN, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(devPool, hostPool, 4 * WALLACE_TOTAL_POOL_SIZE, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(deviceChi2Corrections, chi2Corrections, 4 * WALLACE_NUM_BLOCKS * WALLACE_NUM_OUTPUTS_PER_RUN, cudaMemcpyHostToDevice));
 
 	// setup execution parameters and execute
 	dim3 wallace_grid(WALLACE_NUM_BLOCKS, 1, 1);
@@ -82,12 +105,12 @@ extern "C" void cuda_wallace_two_block(unsigned int seed, float *chi2Corrections
 	CUT_CHECK_ERROR("Kernel execution failed: Wallace");
 
 	// get the transformed pool and the output back
-	CUDA_SAFE_CALL(cudaMemcpy(poolOut, devPool, 4 * WALLACE_TOTAL_POOL_SIZE, cudaMemcpyDeviceToHost));
-	CUDA_SAFE_CALL(cudaMemcpy(output, deviceGeneratedRandomNumberPool, 4 * WALLACE_OUTPUT_SIZE, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(poolOut, devPool, 4 * WALLACE_TOTAL_POOL_SIZE, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(output, deviceGeneratedRandomNumberPool, 4 * WALLACE_OUTPUT_SIZE, cudaMemcpyDeviceToHost));
 
-	CUDA_SAFE_CALL(cudaFree(deviceChi2Corrections));
-	CUDA_SAFE_CALL(cudaFree(devPool));
-	CUDA_SAFE_CALL(cudaFree(deviceGeneratedRandomNumberPool));
+	checkCudaErrors(cudaFree(deviceChi2Corrections));
+	checkCudaErrors(cudaFree(devPool));
+	checkCudaErrors(cudaFree(deviceGeneratedRandomNumberPool));
 
 }
 
@@ -107,12 +130,12 @@ extern "C" void cuda_tausworthe(unsigned *pool, float *output)
 	unsigned *devPool;
 	float *deviceGeneratedRandomNumberPool;
 
-	CUDA_SAFE_CALL(cudaMalloc((void **) &devPool, 4 * TAUSWORTHE_TOTAL_SEED_SIZE));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &deviceGeneratedRandomNumberPool, 4 * TAUSWORTHE_OUTPUT_SIZE));
+	checkCudaErrors(cudaMalloc((void **) &devPool, 4 * TAUSWORTHE_TOTAL_SEED_SIZE));
+	checkCudaErrors(cudaMalloc((void **) &deviceGeneratedRandomNumberPool, 4 * TAUSWORTHE_OUTPUT_SIZE));
 
 	// Perform copies to GPU
 	// copy the start pool in
-	CUDA_SAFE_CALL(cudaMemcpy(devPool, pool, 4 * TAUSWORTHE_TOTAL_SEED_SIZE, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(devPool, pool, 4 * TAUSWORTHE_TOTAL_SEED_SIZE, cudaMemcpyHostToDevice));
 	// setup execution parameters and execute
 	dim3 tausworthe_grid(TAUSWORTHE_NUM_BLOCKS, 1, 1);
 	dim3 tausworthe_threads(TAUSWORTHE_NUM_THREADS, 1, 1);
@@ -121,11 +144,11 @@ extern "C" void cuda_tausworthe(unsigned *pool, float *output)
 	CUT_CHECK_ERROR("Kernel execution failed: Wallace or montecarlo");
 
 	// get the transformed pool and the output back
-	CUDA_SAFE_CALL(cudaMemcpy(pool, devPool, 4 * TAUSWORTHE_TOTAL_SEED_SIZE, cudaMemcpyDeviceToHost));
-	CUDA_SAFE_CALL(cudaMemcpy(output, deviceGeneratedRandomNumberPool, 4 * TAUSWORTHE_OUTPUT_SIZE, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(pool, devPool, 4 * TAUSWORTHE_TOTAL_SEED_SIZE, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(output, deviceGeneratedRandomNumberPool, 4 * TAUSWORTHE_OUTPUT_SIZE, cudaMemcpyDeviceToHost));
 
-	CUDA_SAFE_CALL(cudaFree(devPool));
-	CUDA_SAFE_CALL(cudaFree(deviceGeneratedRandomNumberPool));
+	checkCudaErrors(cudaFree(devPool));
+	checkCudaErrors(cudaFree(deviceGeneratedRandomNumberPool));
 
 }
 
@@ -137,19 +160,19 @@ void speedTests()
 {
 	CUT_CHECK_DEVICE();
 
-	CUT_SAFE_CALL(cutCreateTimer(&timer_pre_computation_init_wallace));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_pre_computation_init_tw));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_pre_computation_init_wallace));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_pre_computation_init_tw));
 
 	// allocate device memory for pool and wallace output
 	// allocate a pool and fill with normal random numbers
 	hostPool = (float *) malloc(4 * WALLACE_TOTAL_POOL_SIZE);
 	tauswortheSeeds = (unsigned int *) malloc(4 * TAUSWORTHE_NUM_SEEDS);
 
-	CUDA_SAFE_CALL(cudaMalloc((void **) &devPool, 4 * WALLACE_TOTAL_POOL_SIZE));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &deviceTauswortheSeeds, 4 * TAUSWORTHE_NUM_SEEDS));
+	checkCudaErrors(cudaMalloc((void **) &devPool, 4 * WALLACE_TOTAL_POOL_SIZE));
+	checkCudaErrors(cudaMalloc((void **) &deviceTauswortheSeeds, 4 * TAUSWORTHE_NUM_SEEDS));
 
 
-	CUT_SAFE_CALL(cutStartTimer(timer_pre_computation_init_wallace));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_pre_computation_init_wallace));
 	// Fill wallace initialisation pool with random numbers
 	double sumSquares = 0;
 	for (unsigned i = 0; i < WALLACE_TOTAL_POOL_SIZE; i++)
@@ -165,19 +188,19 @@ void speedTests()
 		float x = hostPool[i];
 		hostPool[i] = x * scale;
 	}
-	CUT_SAFE_CALL(cutStopTimer(timer_pre_computation_init_wallace));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_pre_computation_init_wallace));
 
-	CUT_SAFE_CALL(cutStartTimer(timer_pre_computation_init_tw));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_pre_computation_init_tw));
 	// Prepare Tausworthe seeds
 	for (unsigned i = 0; i < TAUSWORTHE_NUM_SEEDS; i++)
 	{
 		tauswortheSeeds[i] = (unsigned int) Rand();
 	}
-	CUT_SAFE_CALL(cutStopTimer(timer_pre_computation_init_tw));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_pre_computation_init_tw));
 
 	// Upload tausworthe seeds
-	CUDA_SAFE_CALL(cudaMemcpy(deviceTauswortheSeeds, tauswortheSeeds, 4 * TAUSWORTHE_NUM_SEEDS, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(devPool, hostPool, 4 * WALLACE_TOTAL_POOL_SIZE, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(deviceTauswortheSeeds, tauswortheSeeds, 4 * TAUSWORTHE_NUM_SEEDS, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(devPool, hostPool, 4 * WALLACE_TOTAL_POOL_SIZE, cudaMemcpyHostToDevice));
 
 	// Execute the speed tests
 // RNG only
@@ -193,13 +216,13 @@ void speedTests()
 	free(tauswortheSeeds);
 
 	printf("\n\n");
-	printf("Initialisation time for options: %f (ms)\n", cutGetTimerValue(timer_pre_computation_init_tw));
-	printf("Initialisation time for wallace: %f (ms)\n", cutGetTimerValue(timer_pre_computation_init_wallace));
+	printf("Initialisation time for options: %f (ms)\n", sdkGetTimerValue(&timer_pre_computation_init_tw));
+	printf("Initialisation time for wallace: %f (ms)\n", sdkGetTimerValue(&timer_pre_computation_init_wallace));
 
 
-	CUT_SAFE_CALL(cutDeleteTimer(timer_pre_computation_init_tw));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_pre_computation_init_wallace));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_pre_computation_init_tw));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_pre_computation_init_wallace));
 
-	CUDA_SAFE_CALL(cudaFree(devPool));
-	CUDA_SAFE_CALL(cudaFree(deviceTauswortheSeeds));
+	checkCudaErrors(cudaFree(devPool));
+	checkCudaErrors(cudaFree(deviceTauswortheSeeds));
 }

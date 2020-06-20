@@ -19,29 +19,29 @@ float *device_lookback_VOL_0, *device_lookback_A_0, *device_lookback_A_1,
 float *lookbackSimulationResultsMean, *lookbackSimulationResultsVariance;
 float *device_lookbackSimulationResultsMean, *device_lookbackSimulationResultsVariance;
 
-unsigned int timer_lookback_tw = 0;
-unsigned int timer_lookback_init = 0;
-unsigned int timer_lookback_upload = 0;
-unsigned int timer_lookback_download = 0;
-unsigned int timer_lookback_malloc = 0;
-unsigned int timer_lookback_cuda_malloc = 0;
-unsigned int timer_lookback_free = 0;
-unsigned int timer_lookback_cuda_free = 0;
+StopWatchInterface *timer_lookback_tw = 0;
+StopWatchInterface *timer_lookback_init = 0;
+StopWatchInterface *timer_lookback_upload = 0;
+StopWatchInterface *timer_lookback_download = 0;
+StopWatchInterface *timer_lookback_malloc = 0;
+StopWatchInterface *timer_lookback_cuda_malloc = 0;
+StopWatchInterface *timer_lookback_free = 0;
+StopWatchInterface *timer_lookback_cuda_free = 0;
 
 
 void init_lookback_options()
 {
-	CUT_SAFE_CALL(cutCreateTimer(&timer_lookback_tw));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_lookback_init));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_lookback_upload));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_lookback_download));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_lookback_malloc));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_lookback_cuda_malloc));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_lookback_free));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_lookback_cuda_free));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_lookback_tw));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_lookback_init));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_lookback_upload));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_lookback_download));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_lookback_malloc));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_lookback_cuda_malloc));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_lookback_free));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_lookback_cuda_free));
 
 
-	CUT_SAFE_CALL(cutStartTimer(timer_lookback_malloc));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_lookback_malloc));
 
 	// Lookback option memory allocations
 	lookback_VOL_0 = (float *) malloc(4 * LOOKBACK_NUM_PARAMETER_VALUES);
@@ -55,24 +55,24 @@ void init_lookback_options()
 	lookbackSimulationResultsMean = (float *) malloc(4 * LOOKBACK_NUM_PARAMETER_VALUES);
 	lookbackSimulationResultsVariance = (float *) malloc(4 * LOOKBACK_NUM_PARAMETER_VALUES);
 
-	CUT_SAFE_CALL(cutStopTimer(timer_lookback_malloc));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_lookback_malloc));
 
 
-	CUT_SAFE_CALL(cutStartTimer(timer_lookback_cuda_malloc));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_lookback_cuda_malloc));
 	// Lookback option memory allocations
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_lookback_VOL_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_lookback_A_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_lookback_A_1, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_lookback_A_2, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_lookback_S_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_lookback_EPS_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_lookback_MU, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_lookback_VOL_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_lookback_A_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_lookback_A_1, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_lookback_A_2, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_lookback_S_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_lookback_EPS_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_lookback_MU, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
 
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_lookbackSimulationResultsMean, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_lookbackSimulationResultsVariance, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
-	CUT_SAFE_CALL(cutStopTimer(timer_lookback_cuda_malloc));
+	checkCudaErrors(cudaMalloc((void **) &device_lookbackSimulationResultsMean, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_lookbackSimulationResultsVariance, 4 * LOOKBACK_NUM_PARAMETER_VALUES));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_lookback_cuda_malloc));
 
-	CUT_SAFE_CALL(cutStartTimer(timer_lookback_init));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_lookback_init));
 	// Initialise lookback option parameters, random guesses at this point...
 	for (unsigned i = 0; i < LOOKBACK_NUM_PARAMETER_VALUES; i++)
 	{
@@ -85,22 +85,22 @@ void init_lookback_options()
 		lookback_MU[i] = Rand();
 
 	}
-	CUT_SAFE_CALL(cutStopTimer(timer_lookback_init));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_lookback_init));
 
-	CUT_SAFE_CALL(cutStartTimer(timer_lookback_upload));
-	CUDA_SAFE_CALL(cudaMemcpy(device_lookback_VOL_0, lookback_VOL_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_lookback_A_0, lookback_A_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_lookback_A_1, lookback_A_1, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_lookback_A_2, lookback_A_2, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_lookback_S_0, lookback_S_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_lookback_EPS_0, lookback_EPS_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_lookback_MU, lookback_MU, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUT_SAFE_CALL(cutStopTimer(timer_lookback_upload));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_lookback_upload));
+	checkCudaErrors(cudaMemcpy(device_lookback_VOL_0, lookback_VOL_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_lookback_A_0, lookback_A_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_lookback_A_1, lookback_A_1, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_lookback_A_2, lookback_A_2, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_lookback_S_0, lookback_S_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_lookback_EPS_0, lookback_EPS_0, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_lookback_MU, lookback_MU, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_lookback_upload));
 }
 
 void cleanup_lookback_options()
 {
-	CUT_SAFE_CALL(cutStartTimer(timer_lookback_free));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_lookback_free));
 	// Lookback option memory allocations
 	free(lookback_VOL_0);
 	free(lookback_A_0);
@@ -113,32 +113,32 @@ void cleanup_lookback_options()
 	free(lookbackSimulationResultsMean);
 	free(lookbackSimulationResultsVariance);
 
-	CUT_SAFE_CALL(cutStopTimer(timer_lookback_free));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_lookback_free));
 
 
-	CUT_SAFE_CALL(cutStartTimer(timer_lookback_cuda_free));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_lookback_cuda_free));
 	// Lookback option memory allocations
-	CUDA_SAFE_CALL(cudaFree(device_lookback_VOL_0));
-	CUDA_SAFE_CALL(cudaFree(device_lookback_A_0));
-	CUDA_SAFE_CALL(cudaFree(device_lookback_A_1));
-	CUDA_SAFE_CALL(cudaFree(device_lookback_A_2));
-	CUDA_SAFE_CALL(cudaFree(device_lookback_S_0));
-	CUDA_SAFE_CALL(cudaFree(device_lookback_EPS_0));
-	CUDA_SAFE_CALL(cudaFree(device_lookback_MU));
+	checkCudaErrors(cudaFree(device_lookback_VOL_0));
+	checkCudaErrors(cudaFree(device_lookback_A_0));
+	checkCudaErrors(cudaFree(device_lookback_A_1));
+	checkCudaErrors(cudaFree(device_lookback_A_2));
+	checkCudaErrors(cudaFree(device_lookback_S_0));
+	checkCudaErrors(cudaFree(device_lookback_EPS_0));
+	checkCudaErrors(cudaFree(device_lookback_MU));
 
-	CUDA_SAFE_CALL(cudaFree(device_lookbackSimulationResultsMean));
-	CUDA_SAFE_CALL(cudaFree(device_lookbackSimulationResultsVariance));
-	CUT_SAFE_CALL(cutStopTimer(timer_lookback_cuda_free));
+	checkCudaErrors(cudaFree(device_lookbackSimulationResultsMean));
+	checkCudaErrors(cudaFree(device_lookbackSimulationResultsVariance));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_lookback_cuda_free));
 
 
-	CUT_SAFE_CALL(cutDeleteTimer(timer_lookback_tw));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_lookback_init));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_lookback_upload));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_lookback_download));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_lookback_malloc));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_lookback_cuda_malloc));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_lookback_free));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_lookback_cuda_free));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_lookback_tw));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_lookback_init));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_lookback_upload));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_lookback_download));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_lookback_malloc));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_lookback_cuda_malloc));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_lookback_free));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_lookback_cuda_free));
 
 
 }
@@ -245,7 +245,7 @@ void computeLookbackOptions()
 	const unsigned num_cycles = LOOKBACK_MAX_T;
 
 	// Execute the Tausworthe version of the lookback option, timing as we go
-	CUT_SAFE_CALL(cutStartTimer(timer_lookback_tw));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_lookback_tw));
 	tausworthe_lookback <<< lookback_tausworth_grid,
 		lookback_tausworth_threads,
 		num_cycles * LOOKBACK_TAUSWORTHE_NUM_THREADS >>> (num_cycles,
@@ -256,51 +256,51 @@ void computeLookbackOptions()
 														  device_lookback_EPS_0,
 														  device_lookback_A_0,
 														  device_lookback_A_1, device_lookback_A_2, device_lookback_S_0, device_lookback_MU);
-	CUT_SAFE_CALL(cutStopTimer(timer_lookback_tw));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_lookback_tw));
 	CUT_CHECK_ERROR("Kernel execution failed: lookback tausworthe");
 
 	// There is no Wallace version of the lookback option because the shared memory requirements clash. 
 	// Wallace is not the appropriate generator for all cases as this demonstrates.
 
-	CUT_SAFE_CALL(cutStartTimer(timer_lookback_download));
-	CUDA_SAFE_CALL(cudaMemcpy(lookbackSimulationResultsMean, device_lookbackSimulationResultsMean, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyDeviceToHost));
-	CUDA_SAFE_CALL(cudaMemcpy
+	CUT_SAFE_CALL(sdkStartTimer(&timer_lookback_download));
+	checkCudaErrors(cudaMemcpy(lookbackSimulationResultsMean, device_lookbackSimulationResultsMean, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy
 				   (lookbackSimulationResultsVariance, device_lookbackSimulationResultsVariance, 4 * LOOKBACK_NUM_PARAMETER_VALUES, cudaMemcpyDeviceToHost));
-	CUT_SAFE_CALL(cutStopTimer(timer_lookback_download));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_lookback_download));
 
 	printf("\n\nLookback option results:\n");
 	printf
 		("Processing time for lookback initialisation code: %f (ms) for %d Simulations, %f MSimulations/sec\n",
-		 cutGetTimerValue(timer_lookback_init), LOOKBACK_NUM_PARAMETER_VALUES * LOOKBACK_PATHS_PER_SIM,
-		 LOOKBACK_NUM_PARAMETER_VALUES * LOOKBACK_PATHS_PER_SIM / (cutGetTimerValue(timer_lookback_init) / 1000.0) / 1000000.0);
+		 sdkGetTimerValue(&timer_lookback_init), LOOKBACK_NUM_PARAMETER_VALUES * LOOKBACK_PATHS_PER_SIM,
+		 LOOKBACK_NUM_PARAMETER_VALUES * LOOKBACK_PATHS_PER_SIM / (sdkGetTimerValue(&timer_lookback_init) / 1000.0) / 1000000.0);
 	printf
 		("Processing time for lookback tausworthe: %f (ms) for %d Steps, %f MSteps/sec\n",
-		 cutGetTimerValue(timer_lookback_tw), LOOKBACK_NUM_PARAMETER_VALUES * LOOKBACK_PATHS_PER_SIM * LOOKBACK_MAX_T,
-		 LOOKBACK_NUM_PARAMETER_VALUES * LOOKBACK_PATHS_PER_SIM * LOOKBACK_MAX_T / (cutGetTimerValue(timer_lookback_tw) / 1000.0) / 1000000.0);
+		 sdkGetTimerValue(&timer_lookback_tw), LOOKBACK_NUM_PARAMETER_VALUES * LOOKBACK_PATHS_PER_SIM * LOOKBACK_MAX_T,
+		 LOOKBACK_NUM_PARAMETER_VALUES * LOOKBACK_PATHS_PER_SIM * LOOKBACK_MAX_T / (sdkGetTimerValue(&timer_lookback_tw) / 1000.0) / 1000000.0);
 	printf
 		("Upload time for lookback options: %f (ms) for %d bytes, %f MB/sec\n",
-		 cutGetTimerValue(timer_lookback_upload),
-		 7 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (7 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_lookback_upload))) / 1000.0);
+		 sdkGetTimerValue(&timer_lookback_upload),
+		 7 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (7 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_lookback_upload))) / 1000.0);
 	printf
 		("Download time for lookback options: %f (ms) for %d bytes, %f MB/sec\n",
-		 cutGetTimerValue(timer_lookback_download),
-		 2 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (2 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_lookback_download))) / 1000.0);
+		 sdkGetTimerValue(&timer_lookback_download),
+		 2 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (2 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_lookback_download))) / 1000.0);
 	printf
 		("Malloc time for lookback options: %f (ms) for %d bytes, %f MB/sec\n",
-		 cutGetTimerValue(timer_lookback_malloc),
-		 9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_lookback_malloc))) / 1000.0);
+		 sdkGetTimerValue(&timer_lookback_malloc),
+		 9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_lookback_malloc))) / 1000.0);
 	printf
 		("cudaMalloc time for lookback options: %f (ms) for %d bytes, %f MB/sec\n",
-		 cutGetTimerValue(timer_lookback_cuda_malloc),
-		 9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_lookback_cuda_malloc))) / 1000.0);
+		 sdkGetTimerValue(&timer_lookback_cuda_malloc),
+		 9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_lookback_cuda_malloc))) / 1000.0);
 	printf
 		("free time for lookback options: %f (ms) for %d bytes, %f MB/sec\n",
-		 cutGetTimerValue(timer_lookback_free),
-		 9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_lookback_free))) / 1000.0);
+		 sdkGetTimerValue(&timer_lookback_free),
+		 9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_lookback_free))) / 1000.0);
 	printf
 		("cudaFree time for lookback options: %f (ms) for %d bytes, %f MB/sec\n",
-		 cutGetTimerValue(timer_lookback_cuda_free),
-		 9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_lookback_cuda_free))) / 1000.0);
+		 sdkGetTimerValue(&timer_lookback_cuda_free),
+		 9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES, (9 * 4 * LOOKBACK_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_lookback_cuda_free))) / 1000.0);
 
 
 

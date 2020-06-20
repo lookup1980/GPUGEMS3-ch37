@@ -21,31 +21,31 @@ float *device_asianSimulationResultsMean, *device_asianSimulationResultsVariance
 float *asianChi2Corrections = 0;
 float *deviceAsianChi2Corrections = 0;
 
-unsigned int timer_asian_tw = 0;
-unsigned int timer_asian_wallace = 0;
-unsigned int timer_asian_init = 0;
-unsigned int timer_asian_upload = 0;
-unsigned int timer_asian_download = 0;
-unsigned int timer_asian_malloc = 0;
-unsigned int timer_asian_cuda_malloc = 0;
-unsigned int timer_asian_free = 0;
-unsigned int timer_asian_cuda_free = 0;
+StopWatchInterface *timer_asian_tw = 0;
+StopWatchInterface *timer_asian_wallace = 0;
+StopWatchInterface *timer_asian_init = 0;
+StopWatchInterface *timer_asian_upload = 0;
+StopWatchInterface *timer_asian_download = 0;
+StopWatchInterface *timer_asian_malloc = 0;
+StopWatchInterface *timer_asian_cuda_malloc = 0;
+StopWatchInterface *timer_asian_free = 0;
+StopWatchInterface *timer_asian_cuda_free = 0;
 
 
 void init_asian_options()
 {
-	CUT_SAFE_CALL(cutCreateTimer(&timer_asian_tw));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_asian_wallace));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_asian_init));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_asian_upload));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_asian_download));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_asian_malloc));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_asian_cuda_malloc));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_asian_free));
-	CUT_SAFE_CALL(cutCreateTimer(&timer_asian_cuda_free));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_asian_tw));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_asian_wallace));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_asian_init));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_asian_upload));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_asian_download));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_asian_malloc));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_asian_cuda_malloc));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_asian_free));
+	CUT_SAFE_CALL(sdkCreateTimer(&timer_asian_cuda_free));
 
 
-	CUT_SAFE_CALL(cutStartTimer(timer_asian_malloc));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_asian_malloc));
 
 	// Asian option memory allocations
 	asian_A_0 = (float *) malloc(4 * ASIAN_NUM_PARAMETER_VALUES);
@@ -60,25 +60,25 @@ void init_asian_options()
 	asianSimulationResultsMean = (float *) malloc(4 * ASIAN_NUM_PARAMETER_VALUES);
 	asianSimulationResultsVariance = (float *) malloc(4 * ASIAN_NUM_PARAMETER_VALUES);
 
-	CUT_SAFE_CALL(cutStopTimer(timer_asian_malloc));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_asian_malloc));
 
 
-	CUT_SAFE_CALL(cutStartTimer(timer_asian_cuda_malloc));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_asian_cuda_malloc));
 	// Asian option memory allocations
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_asian_A_0, 4 * ASIAN_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_asian_B_0, 4 * ASIAN_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_asian_MU_A, 4 * ASIAN_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_asian_SIG_AA, 4 * ASIAN_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_asian_MU_B, 4 * ASIAN_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_asian_SIG_AB, 4 * ASIAN_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_asian_SIG_BB, 4 * ASIAN_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &deviceAsianChi2Corrections, 4 * ASIAN_WALLACE_CHI2_COUNT));
+	checkCudaErrors(cudaMalloc((void **) &device_asian_A_0, 4 * ASIAN_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_asian_B_0, 4 * ASIAN_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_asian_MU_A, 4 * ASIAN_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_asian_SIG_AA, 4 * ASIAN_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_asian_MU_B, 4 * ASIAN_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_asian_SIG_AB, 4 * ASIAN_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_asian_SIG_BB, 4 * ASIAN_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &deviceAsianChi2Corrections, 4 * ASIAN_WALLACE_CHI2_COUNT));
 
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_asianSimulationResultsMean, 4 * ASIAN_NUM_PARAMETER_VALUES));
-	CUDA_SAFE_CALL(cudaMalloc((void **) &device_asianSimulationResultsVariance, 4 * ASIAN_NUM_PARAMETER_VALUES));
-	CUT_SAFE_CALL(cutStopTimer(timer_asian_cuda_malloc));
+	checkCudaErrors(cudaMalloc((void **) &device_asianSimulationResultsMean, 4 * ASIAN_NUM_PARAMETER_VALUES));
+	checkCudaErrors(cudaMalloc((void **) &device_asianSimulationResultsVariance, 4 * ASIAN_NUM_PARAMETER_VALUES));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_asian_cuda_malloc));
 
-	CUT_SAFE_CALL(cutStartTimer(timer_asian_init));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_asian_init));
 	// Initialise asian option parameters, random guesses at this point...
 	for (unsigned i = 0; i < ASIAN_NUM_PARAMETER_VALUES; i++)
 	{
@@ -95,23 +95,23 @@ void init_asian_options()
 	{
 		asianChi2Corrections[i] = MakeChi2Scale(WALLACE_TOTAL_POOL_SIZE);
 	}
-	CUT_SAFE_CALL(cutStopTimer(timer_asian_init));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_asian_init));
 
-	CUT_SAFE_CALL(cutStartTimer(timer_asian_upload));
-	CUDA_SAFE_CALL(cudaMemcpy(device_asian_A_0, asian_A_0, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_asian_B_0, asian_B_0, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_asian_MU_A, asian_MU_A, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_asian_MU_B, asian_MU_B, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_asian_SIG_AA, asian_SIG_AA, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_asian_SIG_AB, asian_SIG_AB, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(device_asian_SIG_BB, asian_SIG_BB, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
-	CUDA_SAFE_CALL(cudaMemcpy(deviceAsianChi2Corrections, asianChi2Corrections, 4 * ASIAN_WALLACE_CHI2_COUNT, cudaMemcpyHostToDevice));
-	CUT_SAFE_CALL(cutStopTimer(timer_asian_upload));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_asian_upload));
+	checkCudaErrors(cudaMemcpy(device_asian_A_0, asian_A_0, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_asian_B_0, asian_B_0, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_asian_MU_A, asian_MU_A, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_asian_MU_B, asian_MU_B, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_asian_SIG_AA, asian_SIG_AA, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_asian_SIG_AB, asian_SIG_AB, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(device_asian_SIG_BB, asian_SIG_BB, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(deviceAsianChi2Corrections, asianChi2Corrections, 4 * ASIAN_WALLACE_CHI2_COUNT, cudaMemcpyHostToDevice));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_asian_upload));
 }
 
 void cleanup_asian_options()
 {
-	CUT_SAFE_CALL(cutStartTimer(timer_asian_free));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_asian_free));
 	// Asian option memory allocations
 	free(asian_A_0);
 	free(asian_B_0);
@@ -125,34 +125,34 @@ void cleanup_asian_options()
 	free(asianSimulationResultsMean);
 	free(asianSimulationResultsVariance);
 
-	CUT_SAFE_CALL(cutStopTimer(timer_asian_free));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_asian_free));
 
 
-	CUT_SAFE_CALL(cutStartTimer(timer_asian_cuda_free));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_asian_cuda_free));
 	// Asian option memory allocations
-	CUDA_SAFE_CALL(cudaFree(device_asian_A_0));
-	CUDA_SAFE_CALL(cudaFree(device_asian_B_0));
-	CUDA_SAFE_CALL(cudaFree(device_asian_MU_A));
-	CUDA_SAFE_CALL(cudaFree(device_asian_SIG_AA));
-	CUDA_SAFE_CALL(cudaFree(device_asian_MU_B));
-	CUDA_SAFE_CALL(cudaFree(device_asian_SIG_AB));
-	CUDA_SAFE_CALL(cudaFree(device_asian_SIG_BB));
-	CUDA_SAFE_CALL(cudaFree(deviceAsianChi2Corrections));
+	checkCudaErrors(cudaFree(device_asian_A_0));
+	checkCudaErrors(cudaFree(device_asian_B_0));
+	checkCudaErrors(cudaFree(device_asian_MU_A));
+	checkCudaErrors(cudaFree(device_asian_SIG_AA));
+	checkCudaErrors(cudaFree(device_asian_MU_B));
+	checkCudaErrors(cudaFree(device_asian_SIG_AB));
+	checkCudaErrors(cudaFree(device_asian_SIG_BB));
+	checkCudaErrors(cudaFree(deviceAsianChi2Corrections));
 
-	CUDA_SAFE_CALL(cudaFree(device_asianSimulationResultsMean));
-	CUDA_SAFE_CALL(cudaFree(device_asianSimulationResultsVariance));
-	CUT_SAFE_CALL(cutStopTimer(timer_asian_cuda_free));
+	checkCudaErrors(cudaFree(device_asianSimulationResultsMean));
+	checkCudaErrors(cudaFree(device_asianSimulationResultsVariance));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_asian_cuda_free));
 
 
-	CUT_SAFE_CALL(cutDeleteTimer(timer_asian_tw));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_asian_wallace));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_asian_init));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_asian_upload));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_asian_download));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_asian_malloc));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_asian_cuda_malloc));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_asian_free));
-	CUT_SAFE_CALL(cutDeleteTimer(timer_asian_cuda_free));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_asian_tw));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_asian_wallace));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_asian_init));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_asian_upload));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_asian_download));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_asian_malloc));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_asian_cuda_malloc));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_asian_free));
+	CUT_SAFE_CALL(sdkDeleteTimer(&timer_asian_cuda_free));
 
 }
 
@@ -322,17 +322,17 @@ void computeAsianOptions()
 	dim3 asian_wallace_threads(WALLACE_NUM_THREADS, 1, 1);
 
 	// Execute the Tausworthe version of the code, timing as we go
-	CUT_SAFE_CALL(cutStartTimer(timer_asian_tw));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_asian_tw));
 	tausworthe_asian_basket <<< asian_tausworth_grid, asian_tausworth_threads,
 		0 >>> (deviceTauswortheSeeds, device_asianSimulationResultsMean,
 			   device_asianSimulationResultsVariance, device_asian_A_0,
 			   device_asian_B_0, device_asian_MU_A, device_asian_SIG_AA, device_asian_MU_B, device_asian_SIG_AB, device_asian_SIG_BB);
-	CUT_SAFE_CALL(cutStopTimer(timer_asian_tw));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_asian_tw));
 	CUT_CHECK_ERROR("Kernel execution failed: asian tausworthe");
 
 	unsigned seed = 1;
 
-	CUT_SAFE_CALL(cutStartTimer(timer_asian_wallace));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_asian_wallace));
 
 	// Execute the Wallace version of the code, timing as we go
 	// Extra shared memory space to store loop counter temporarily to ease register pressure
@@ -344,45 +344,45 @@ void computeAsianOptions()
 										  device_asianSimulationResultsVariance,
 										  device_asian_A_0, device_asian_B_0,
 										  device_asian_MU_A, device_asian_SIG_AA, device_asian_MU_B, device_asian_SIG_AB, device_asian_SIG_BB);
-	CUT_SAFE_CALL(cutStopTimer(timer_asian_wallace));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_asian_wallace));
 
 	// check if kernel execution generated an error
 	CUT_CHECK_ERROR("Kernel execution failed: asian wallace");
 
-	CUT_SAFE_CALL(cutStartTimer(timer_asian_download));
-	CUDA_SAFE_CALL(cudaMemcpy(asianSimulationResultsMean, device_asianSimulationResultsMean, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyDeviceToHost));
-	CUDA_SAFE_CALL(cudaMemcpy(asianSimulationResultsVariance, device_asianSimulationResultsVariance, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyDeviceToHost));
-	CUT_SAFE_CALL(cutStopTimer(timer_asian_download));
+	CUT_SAFE_CALL(sdkStartTimer(&timer_asian_download));
+	checkCudaErrors(cudaMemcpy(asianSimulationResultsMean, device_asianSimulationResultsMean, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(asianSimulationResultsVariance, device_asianSimulationResultsVariance, 4 * ASIAN_NUM_PARAMETER_VALUES, cudaMemcpyDeviceToHost));
+	CUT_SAFE_CALL(sdkStopTimer(&timer_asian_download));
 
 	printf("\n\nAsian option results:\n");
 	printf
 		("Processing time for asian initialisation code: %f (ms) for %d Simulations, %f MSimulations/sec\n",
-		 cutGetTimerValue(timer_asian_init), ASIAN_NUM_PARAMETER_VALUES * ASIAN_PATHS_PER_SIM,
-		 ASIAN_NUM_PARAMETER_VALUES * ASIAN_PATHS_PER_SIM / (cutGetTimerValue(timer_asian_init) / 1000.0) / 1000000.0);
+		 sdkGetTimerValue(&timer_asian_init), ASIAN_NUM_PARAMETER_VALUES * ASIAN_PATHS_PER_SIM,
+		 ASIAN_NUM_PARAMETER_VALUES * ASIAN_PATHS_PER_SIM / (sdkGetTimerValue(&timer_asian_init) / 1000.0) / 1000000.0);
 	printf
 		("Processing time for asian tausworthe: %f (ms) for %d Steps, %f MSteps/sec\n",
-		 cutGetTimerValue(timer_asian_tw), ASIAN_NUM_PARAMETER_VALUES * ASIAN_PATHS_PER_SIM * ASIAN_TIME_STEPS,
-		 ASIAN_NUM_PARAMETER_VALUES * ASIAN_PATHS_PER_SIM * ASIAN_TIME_STEPS / (cutGetTimerValue(timer_asian_tw) / 1000.0) / 1000000.0);
-	printf("Processing time for asian wallace: %f (ms) for %d Simulations, %f Simulations/sec\n", cutGetTimerValue(timer_asian_wallace),
-		   ASIAN_NUM_PARAMETER_VALUES, ASIAN_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_asian_wallace) / 1000.0) / 1000000.0);
-	printf("Upload time for asian options: %f (ms) for %d bytes, %f MB/sec\n", cutGetTimerValue(timer_asian_upload),
+		 sdkGetTimerValue(&timer_asian_tw), ASIAN_NUM_PARAMETER_VALUES * ASIAN_PATHS_PER_SIM * ASIAN_TIME_STEPS,
+		 ASIAN_NUM_PARAMETER_VALUES * ASIAN_PATHS_PER_SIM * ASIAN_TIME_STEPS / (sdkGetTimerValue(&timer_asian_tw) / 1000.0) / 1000000.0);
+	printf("Processing time for asian wallace: %f (ms) for %d Simulations, %f Simulations/sec\n", sdkGetTimerValue(&timer_asian_wallace),
+		   ASIAN_NUM_PARAMETER_VALUES, ASIAN_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_asian_wallace) / 1000.0) / 1000000.0);
+	printf("Upload time for asian options: %f (ms) for %d bytes, %f MB/sec\n", sdkGetTimerValue(&timer_asian_upload),
 		   4 * ASIAN_WALLACE_CHI2_COUNT + 7 * 4 * ASIAN_NUM_PARAMETER_VALUES,
-		   (4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_asian_upload))) / 1000.0);
-	printf("Download time for asian options: %f (ms) for %d bytes, %f MB/sec\n", cutGetTimerValue(timer_asian_download),
+		   (4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_asian_upload))) / 1000.0);
+	printf("Download time for asian options: %f (ms) for %d bytes, %f MB/sec\n", sdkGetTimerValue(&timer_asian_download),
 		   4 * ASIAN_WALLACE_CHI2_COUNT + 4 * ASIAN_NUM_PARAMETER_VALUES,
-		   (4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_asian_download))) / 1000.0);
-	printf("Malloc time for asian options: %f (ms) for %d bytes, %f MB/sec\n", cutGetTimerValue(timer_asian_malloc),
+		   (4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_asian_download))) / 1000.0);
+	printf("Malloc time for asian options: %f (ms) for %d bytes, %f MB/sec\n", sdkGetTimerValue(&timer_asian_malloc),
 		   4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES,
-		   (4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_asian_malloc))) / 1000.0);
-	printf("cudaMalloc time for asian options: %f (ms) for %d bytes, %f MB/sec\n", cutGetTimerValue(timer_asian_cuda_malloc),
+		   (4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_asian_malloc))) / 1000.0);
+	printf("cudaMalloc time for asian options: %f (ms) for %d bytes, %f MB/sec\n", sdkGetTimerValue(&timer_asian_cuda_malloc),
 		   4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES,
-		   (4 * ASIAN_WALLACE_CHI2_COUNT + 7 * 4 * ASIAN_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_asian_cuda_malloc))) / 1000.0);
-	printf("free time for asian options: %f (ms) for %d bytes, %f MB/sec\n", cutGetTimerValue(timer_asian_free),
+		   (4 * ASIAN_WALLACE_CHI2_COUNT + 7 * 4 * ASIAN_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_asian_cuda_malloc))) / 1000.0);
+	printf("free time for asian options: %f (ms) for %d bytes, %f MB/sec\n", sdkGetTimerValue(&timer_asian_free),
 		   4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES,
-		   (4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_asian_free))) / 1000.0);
-	printf("cudaFree time for asian options: %f (ms) for %d bytes, %f MB/sec\n", cutGetTimerValue(timer_asian_cuda_free),
+		   (4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_asian_free))) / 1000.0);
+	printf("cudaFree time for asian options: %f (ms) for %d bytes, %f MB/sec\n", sdkGetTimerValue(&timer_asian_cuda_free),
 		   4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES,
-		   (4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES / (cutGetTimerValue(timer_asian_cuda_free))) / 1000.0);
+		   (4 * ASIAN_WALLACE_CHI2_COUNT + 9 * 4 * ASIAN_NUM_PARAMETER_VALUES / (sdkGetTimerValue(&timer_asian_cuda_free))) / 1000.0);
 
 	cleanup_asian_options();
 }

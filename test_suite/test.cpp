@@ -26,7 +26,7 @@
 
 void speedTests();
 
-void benchmarkSoftwareOption(char *name, char *rngname, ThingMapper < RNG > &rngs, ThingMapper < Simulation > &sims)
+void benchmarkSoftwareOption(const char *name, const char *rngname, ThingMapper < RNG > &rngs, ThingMapper < Simulation > &sims)
 {
 
 	// Benchmark software lookback option
@@ -53,7 +53,7 @@ void benchmarkSoftwareOption(char *name, char *rngname, ThingMapper < RNG > &rng
 	fprintf(stdout, "mean=%lf, stddev=%lf\n", res.first, res.second);
 }
 
-void benchmarkSoftwareRNG(char *name, ThingMapper < RNG > &rngs)
+void benchmarkSoftwareRNG(const char *name, ThingMapper < RNG > &rngs)
 {
 
 	// Speed test CPU Wallace
@@ -80,7 +80,7 @@ void benchmarkSoftwareRNG(char *name, ThingMapper < RNG > &rngs)
 	fprintf(stdout, "%s, time=%lf, num=%0.0lf, MSamples/s=%lf, lastFloat=%f\n", rng->Name(), elapsed, done, done / (elapsed * 1000000), rng->Generate());
 }
 
-void chi2Test(char *name, ThingMapper < RNG > &rngs, ThingMapper < Test > &tests)
+void chi2Test(const char *name, ThingMapper < RNG > &rngs, ThingMapper < Test > &tests)
 {
 	boost::shared_ptr < RNG > rng = rngs.Get(name);
 	boost::shared_ptr < Test > test = tests.Get("QuickChi2");

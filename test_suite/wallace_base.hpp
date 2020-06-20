@@ -44,7 +44,7 @@ double MakeChi2Scale(unsigned N, double r = RandN())
 	return chic1 + chic2 * r;
 }
 
-void Hadamard4x4a(float &p, float &q, float &r, float &s)
+static void Hadamard4x4a(float &p, float &q, float &r, float &s)
 {
 	float t = (p + q + r + s) / 2;
 	p = p - t;
@@ -53,7 +53,7 @@ void Hadamard4x4a(float &p, float &q, float &r, float &s)
 	s = t - s;
 }
 
-void Hadamard4x4b(float &p, float &q, float &r, float &s)
+static void Hadamard4x4b(float &p, float &q, float &r, float &s)
 {
 	float t = (p + q + r + s) / 2;
 	p = t - p;
